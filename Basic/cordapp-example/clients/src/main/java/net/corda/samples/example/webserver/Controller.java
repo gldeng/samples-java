@@ -13,8 +13,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 
-import net.corda.samples.example.flows.ExampleFlow;
-import net.corda.samples.example.states.IOUState;
+import com.r3.conclave.cordapp.sample.host.ReverseFlow;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.slf4j.Logger;
@@ -139,17 +138,13 @@ public class Controller {
         myMap.put("me", me.toString());
         return myMap;
     }
-    @GetMapping(value = "/ious",produces = APPLICATION_JSON_VALUE)
-    public List<StateAndRef<IOUState>> getIOUs() {
-        // Filter by state type: IOU.
-        return proxy.vaultQuery(IOUState.class).getStates();
-    }
 
-    @PostMapping (value = "create-iou" , produces =  TEXT_PLAIN_VALUE , headers =  "Content-Type=application/x-www-form-urlencoded" )
-    public ResponseEntity<String> issueIOU(HttpServletRequest request) throws IllegalArgumentException {
+    @PostMapping (value = "reverse-me" , produces =  TEXT_PLAIN_VALUE , headers =  "Content-Type=application/x-www-form-urlencoded" )
+    public ResponseEntity<String> reverseMe(HttpServletRequest request) throws IllegalArgumentException {
 
-        int amount = Integer. valueOf(request.getParameter("iouValue"));
+        String message = request.getParameter("message");
         String party = request.getParameter("partyName");
+        String constraint = request.getParameter("constraint");
         // Get party objects for myself and the counterparty.
 
         CordaX500Name partyX500Name = CordaX500Name.parse(party);
@@ -158,25 +153,18 @@ public class Controller {
         // Create a new IOU state using the parameters given.
         try {
             // Start the IOUIssueFlow. We block and waits for the flow to return.
-            SignedTransaction result = proxy.startTrackedFlowDynamic(ExampleFlow.Initiator.class, amount,otherParty).getReturnValue().get();
+            String result = proxy.startTrackedFlowDynamic(
+                ReverseFlow.class, otherParty, message, constraint
+            ).getReturnValue().get();
             // Return the response.
             return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body("Transaction id "+ result.getId() +" committed to ledger.\n " + result.getTx().getOutput(0));
+                    .body("Transaction id "+ result +" committed to ledger.\n " + result);
             // For the purposes of this demo app, we do not differentiate by exception type.
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body(e.getMessage());
         }
-    }
-    /**
-     * Displays all IOU states that only this node has been involved in.
-     */
-    @GetMapping(value = "my-ious",produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<StateAndRef<IOUState>>> getMyIOUs() {
-        List<StateAndRef<IOUState>> myious = proxy.vaultQuery(IOUState.class).getStates().stream().filter(
-                it -> it.getState().getData().getLender().equals(proxy.nodeInfo().getLegalIdentities().get(0))).collect(Collectors.toList());
-        return ResponseEntity.ok(myious);
     }
 }
