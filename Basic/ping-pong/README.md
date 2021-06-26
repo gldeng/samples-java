@@ -108,3 +108,10 @@ You should see the following message, indicating that PartyB responded to your p
 
     `Successfully pinged O=PartyB,L=New York,C=US.`.
 
+### Appendix - Signing jar
+Refer to: [https://training.corda.net/operations/package-jar/](https://training.corda.net/operations/package-jar/)
+Generate key
+```
+keytool -keystore jar-sign-keystore.jks -keyalg RSA -genkey -dname "OU=Corda Network, O=Corda Consortium, L=New York, C=US" -storepass password -keypass password -alias awesome-cordapp-signer -validity 3650
+keytool -importkeystore -srckeystore jar-sign-keystore.jks -destkeystore jar-sign-keystore.pkcs12 -deststoretype pkcs12
+```
