@@ -22,9 +22,11 @@ public class Pong extends FlowLogic<Void> {
     public Void call() throws FlowException {
         UntrustworthyData<String> counterpartyData = counterpartySession.receive(String.class);
         counterpartyData.unwrap(msg -> {
+            getLogger().info("Received "+msg + " from "+counterpartySession.getCounterparty().getName());
             assert (msg.equals("ping"));
             return true;
         });
+        getLogger().info("Ponging "+counterpartySession.getCounterparty().getName());
         counterpartySession.send("pong");
         return null;
     }

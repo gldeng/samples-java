@@ -19,8 +19,10 @@ public class Ping extends FlowLogic<Void> {
     @Override
     public Void call() throws FlowException {
         final FlowSession counterpartySession = initiateFlow(counterparty);
+        getLogger().info("Pinging "+counterparty);
         final UntrustworthyData<String> counterpartyData = counterpartySession.sendAndReceive(String.class, "ping");
         counterpartyData.unwrap( msg -> {
+            getLogger().info("Received "+msg+" from "+counterpartySession.getCounterparty().getName());
             assert(msg.equals("pong"));
             return true;
         });
